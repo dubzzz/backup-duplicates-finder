@@ -1,10 +1,11 @@
 // @ts-check
 import process from 'process';
+import { log } from './logger.mjs';
 
 process.on('unhandledRejection', (reason, p) => {
-  console.error('💥 Unhandled Rejection at:', p, 'reason:', reason);
+  log('Unhandled Rejection at: ' + p + ', reason: ' + reason, [], 'error');
 });
 process.on('uncaughtException', (error) => {
-  console.error(`💥 Caught exception: ${error}`);
-  console.error(`💥 Exception origin: ${error.stack}`);
+  log(`Caught exception: ${error}`, [], 'error');
+  log(`Exception origin: ${error.stack}`, [], 'error');
 });

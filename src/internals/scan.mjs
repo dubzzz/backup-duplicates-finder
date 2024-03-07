@@ -3,6 +3,7 @@ import fs from 'fs/promises';
 import path from 'path';
 import { createHash } from 'crypto';
 import { poolSize, runInPool } from './pool.mjs';
+import { log } from './logger.mjs';
 
 /**
  * @param {string} dir
@@ -71,10 +72,11 @@ async function scanAnyInternal(dir, file, withHash, fileList, knownFilePathToHas
         () => computeHash(filePath),
         (a) => (analytics = a),
       );
-      console.debug(`🐞 Scanned: ${file}`);
-      console.debug(`  -> analytics: ${JSON.stringify(analytics)}`);
-      console.debug(`  -> hash: ${sha1sum}`);
-      console.debug(`  -> pool: ${JSON.stringify(poolSize())}`);
+      log(
+        `Scanned: ${file}`,
+        [`analytics: ${JSON.stringify(analytics)}`, `hash: ${sha1sum}`, `pool: ${JSON.stringify(poolSize())}`],
+        'debug',
+      );
       fileList.push({ name: file, path: filePath, hash: sha1sum });
     }
   }

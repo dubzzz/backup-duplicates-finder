@@ -4,6 +4,7 @@ import yargs from 'yargs';
 import { hideBin } from 'yargs/helpers';
 import './internals/errorHandling.mjs';
 import { cachedScanDirectory } from './internals/cachedScan.mjs';
+import { log } from './internals/logger.mjs';
 
 const argv = await yargs(hideBin(process.argv))
   .command(
@@ -35,28 +36,26 @@ const [sourcePath, copyPath] = argv._;
 
 const sourceContent = new Map(await listFilesRecursively(String(sourcePath)));
 const copyContent = new Map(await listFilesRecursively(String(copyPath)));
+const logDetails = [
+  `with source: ${sourcePath}`,
+  `with copy: ${copyPath}`,
+  `with hash: ${checksumIncludesHash ? 'ON' : 'OFF'}`,
+  `with file: ${checksumIncludesName ? 'ON' : 'OFF'}`,
+];
 
-console.info(`ℹ️ Check if some entries of "copy" are missing in "source"`);
-console.info(`  -> with source: ${sourcePath}`);
-console.info(`  -> with copy: ${copyPath}`);
-console.info(`  -> with hash: ${checksumIncludesHash ? 'ON' : 'OFF'}`);
-console.info(`  -> with file: ${checksumIncludesName ? 'ON' : 'OFF'}\n\n`);
+log(`Check if some entries of "copy" are missing in "source"`, logDetails, 'info');
 
 let numMissing = 0;
 for (const [checksum, { filePath }] of copyContent) {
   if (!sourceContent.has(checksum)) {
     ++numMissing;
-    console.warn(`No such ${JSON.stringify(filePath)} in source`);
+    log(`No such ${JSON.stringify(filePath)} in source`, [], 'warn');
   }
 }
 if (numMissing !== 0) {
-  console.log(`Found ${numMissing} elements in copy that cannot match anything in source`);
-  console.log(`  -> with source: ${sourcePath}`);
-  console.log(`  -> with copy: ${copyPath}`);
+  log(`Found ${numMissing} elements in copy that cannot match anything in source`, logDetails);
 } else {
-  console.log(`Every element known is copy is available in source`);
-  console.log(`  -> with source: ${sourcePath}`);
-  console.log(`  -> with copy: ${copyPath}`);
+  log(`Every element known is copy is available in source`, logDetails);
 }
 
 // Helpers

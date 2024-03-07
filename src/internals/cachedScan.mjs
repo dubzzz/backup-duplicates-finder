@@ -4,6 +4,7 @@ import path from 'path';
 import * as url from 'url';
 import { createHash } from 'crypto';
 import { scanDirectory } from './scan.mjs';
+import { log } from './logger.mjs';
 
 const __dirname = url.fileURLToPath(new URL('.', import.meta.url));
 
@@ -25,25 +26,26 @@ export async function cachedScanDirectory(dir, options) {
   let knownFilePathToHash = undefined;
   try {
     const cachedResultsRaw = await fs.readFile(cachedResultsPath);
-    console.info(`ℹ️ Cache found for ${dir} with options ${printedOptions}`);
-    console.info(`  -> read from ${cachedResultsPath}`);
     const cachedResults = JSON.parse(cachedResultsRaw.toString());
-    console.info(`  -> got ${cachedResults.length} results`);
+    log(
+      `Cache found for ${dir} with options ${printedOptions}`,
+      [`read from ${cachedResultsPath}`, `got ${cachedResults.length} results`],
+      'info',
+    );
     if (!options.isIncremental) {
       return cachedResults;
     }
     knownFilePathToHash = new Map(cachedResults.map((r) => [r.path, r.hash]));
   } catch (err) {}
 
-  if (knownFilePathToHash === undefined) {
-    console.info(`⚠️ No cache found for ${dir} with options ${printedOptions}`);
-  } else {
-    console.info(`⚠️ Incrementally computing cache for ${dir} with options ${printedOptions}`);
-  }
+  const { appendLine } =
+    knownFilePathToHash === undefined
+      ? log(`No cache found for ${dir} with options ${printedOptions}`, [], 'warn')
+      : log(`Incrementally computing cache for ${dir} with options ${printedOptions}`, [], 'warn');
   const results = await scanDirectory(dir, knownFilePathToHash, options);
-  console.info(`  -> scan found ${results.length} results`);
+  appendLine(`scan found ${results.length} results`);
   await fs.mkdir(path.dirname(cachedResultsPath), { recursive: true });
   await fs.writeFile(cachedResultsPath, JSON.stringify(results));
-  console.info(`  -> wrote cache to ${cachedResultsPath}`);
+  appendLine(`wrote cache to ${cachedResultsPath}`);
   return results;
 }
