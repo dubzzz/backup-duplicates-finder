@@ -34,7 +34,7 @@ function registerInPool(asyncFn, onDone, onError) {
         --runningCount;
         releaseOneInPool();
         onError(error);
-      }
+      },
     );
   };
   if (runningCount < maxRunningCount) action();
@@ -66,7 +66,7 @@ export function runInPool(asyncFn, onAnalytics) {
       return data;
     },
     resolve,
-    reject
+    reject,
   );
   return promise;
 }

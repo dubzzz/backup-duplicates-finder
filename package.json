@@ -9,7 +9,11 @@
     ".": "./src/main.mjs"
   },
   "scripts": {
-    "check": "node src/main.mjs"
+    "check": "node src/main.mjs",
+    "format": "prettier --write ."
+  },
+  "devDependencies": {
+    "prettier": "^3.2.5"
   },
   "repository": {
     "type": "git",

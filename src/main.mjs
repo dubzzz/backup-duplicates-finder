@@ -1,24 +1,18 @@
 // @ts-check
-import fs from "fs/promises";
-import path from "path";
-import { createHash } from "crypto";
-import * as url from "url";
-import "./internals/errorHandling.mjs";
-import { scanDirectory } from "./internals/scan.mjs";
+import fs from 'fs/promises';
+import path from 'path';
+import { createHash } from 'crypto';
+import * as url from 'url';
+import './internals/errorHandling.mjs';
+import { scanDirectory } from './internals/scan.mjs';
 
-const __dirname = url.fileURLToPath(new URL(".", import.meta.url));
+const __dirname = url.fileURLToPath(new URL('.', import.meta.url));
 
 // Pretty unsafe parsing for argv, but we can stay with it for simplicity (no install)
 const options = process.argv.slice(2);
-const checksumIncludesHash =
-  process.argv.length <= 2 ||
-  options.includes("--hash") ||
-  options.includes("--all");
-const checksumIncludesFile =
-  process.argv.length <= 2 ||
-  options.includes("--file") ||
-  options.includes("--all");
-const isIncremental = options.includes("--incremental");
+const checksumIncludesHash = process.argv.length <= 2 || options.includes('--hash') || options.includes('--all');
+const checksumIncludesFile = process.argv.length <= 2 || options.includes('--file') || options.includes('--all');
+const isIncremental = options.includes('--incremental');
 
 /**
  * @param {string} dir
@@ -28,14 +22,9 @@ const isIncremental = options.includes("--incremental");
 async function cachedScanDirectory(dir, options) {
   const cachedResultsPath = path.join(
     __dirname,
-    "..",
-    ".cache",
-    path.basename(dir) +
-      "-" +
-      createHash("sha1").update(dir).digest("hex") +
-      "-" +
-      options.withHash +
-      ".json"
+    '..',
+    '.cache',
+    path.basename(dir) + '-' + createHash('sha1').update(dir).digest('hex') + '-' + options.withHash + '.json',
   );
   const printedOptions = JSON.stringify(options);
 
@@ -55,9 +44,7 @@ async function cachedScanDirectory(dir, options) {
   if (knownFilePathToHash === undefined) {
     console.info(`⚠️ No cache found for ${dir} with options ${printedOptions}`);
   } else {
-    console.info(
-      `⚠️ Incrementally computing cache for ${dir} with options ${printedOptions}`
-    );
+    console.info(`⚠️ Incrementally computing cache for ${dir} with options ${printedOptions}`);
   }
   const results = await scanDirectory(dir, knownFilePathToHash, options);
   console.info(`  -> scan found ${results.length} results`);
@@ -75,10 +62,7 @@ async function listFilesRecursively(dir) {
   const options = { withHash: checksumIncludesHash };
   const results = await cachedScanDirectory(dir, options);
   return results.map((entry) => [
-    [
-      checksumIncludesHash ? `hash:${entry.hash}` : "",
-      checksumIncludesFile ? `file:${entry.name}` : "",
-    ].join(":"),
+    [checksumIncludesHash ? `hash:${entry.hash}` : '', checksumIncludesFile ? `file:${entry.name}` : ''].join(':'),
     { file: entry.name, filePath: entry.path },
   ]);
 }
@@ -92,8 +76,8 @@ const copyContent = new Map(await listFilesRecursively(copyPath));
 console.info(`ℹ️ Check if some entries of "copy" are missing in "source"`);
 console.info(`  -> with source: ${sourcePath}`);
 console.info(`  -> with copy: ${copyPath}`);
-console.info(`  -> with hash: ${checksumIncludesHash ? "ON" : "OFF"}`);
-console.info(`  -> with file: ${checksumIncludesFile ? "ON" : "OFF"}\n\n`);
+console.info(`  -> with hash: ${checksumIncludesHash ? 'ON' : 'OFF'}`);
+console.info(`  -> with file: ${checksumIncludesFile ? 'ON' : 'OFF'}\n\n`);
 
 let numMissing = 0;
 for (const [checksum, { filePath }] of copyContent) {
@@ -103,9 +87,7 @@ for (const [checksum, { filePath }] of copyContent) {
   }
 }
 if (numMissing !== 0) {
-  console.log(
-    `Found ${numMissing} elements in copy that cannot match anything in source`
-  );
+  console.log(`Found ${numMissing} elements in copy that cannot match anything in source`);
   console.log(`  -> with source: ${sourcePath}`);
   console.log(`  -> with copy: ${copyPath}`);
 } else {

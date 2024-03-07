@@ -1,8 +1,8 @@
 // @ts-check
-import fs from "fs/promises";
-import path from "path";
-import { createHash } from "crypto";
-import { poolSize, runInPool } from "./pool.mjs";
+import fs from 'fs/promises';
+import path from 'path';
+import { createHash } from 'crypto';
+import { poolSize, runInPool } from './pool.mjs';
 
 /**
  * @param {string} dir
@@ -12,12 +12,7 @@ import { poolSize, runInPool } from "./pool.mjs";
  */
 export async function scanDirectory(dir, knownFilePathToHash, options) {
   const fileList = [];
-  await scanDirectoryInternal(
-    dir,
-    options.withHash,
-    fileList,
-    knownFilePathToHash ?? new Map()
-  );
+  await scanDirectoryInternal(dir, options.withHash, fileList, knownFilePathToHash ?? new Map());
   return fileList;
 }
 
@@ -28,12 +23,7 @@ export async function scanDirectory(dir, knownFilePathToHash, options) {
  * @param {Map<string, string|undefined>} knownFilePathToHash
  * @returns {Promise<void>}
  */
-async function scanDirectoryInternal(
-  dir,
-  withHash,
-  fileList,
-  knownFilePathToHash
-) {
+async function scanDirectoryInternal(dir, withHash, fileList, knownFilePathToHash) {
   const files = await fs.readdir(dir);
 
   let resolveDirectoryDone, rejectDirectoryDone;
@@ -45,12 +35,9 @@ async function scanDirectoryInternal(
   let missing = 0;
   for (const file of files) {
     ++missing;
-    scanAnyInternal(dir, file, withHash, fileList, knownFilePathToHash).then(
-      () => {
-        if (--missing === 0) resolveDirectoryDone();
-      },
-      rejectDirectoryDone
-    );
+    scanAnyInternal(dir, file, withHash, fileList, knownFilePathToHash).then(() => {
+      if (--missing === 0) resolveDirectoryDone();
+    }, rejectDirectoryDone);
   }
   if (missing === 0) {
     resolveDirectoryDone();
@@ -66,23 +53,12 @@ async function scanDirectoryInternal(
  * @param {Map<string, string|undefined>} knownFilePathToHash
  * @returns {Promise<void>}
  */
-async function scanAnyInternal(
-  dir,
-  file,
-  withHash,
-  fileList,
-  knownFilePathToHash
-) {
+async function scanAnyInternal(dir, file, withHash, fileList, knownFilePathToHash) {
   const filePath = path.join(dir, file);
   const stats = await fs.stat(filePath);
 
   if (stats.isDirectory()) {
-    await scanDirectoryInternal(
-      filePath,
-      withHash,
-      fileList,
-      knownFilePathToHash
-    );
+    await scanDirectoryInternal(filePath, withHash, fileList, knownFilePathToHash);
   } else if (!withHash) {
     fileList.push({ name: file, path: filePath, hash: undefined });
   } else {
@@ -93,7 +69,7 @@ async function scanAnyInternal(
       let analytics;
       const sha1sum = await runInPool(
         () => computeHash(filePath),
-        (a) => (analytics = a)
+        (a) => (analytics = a),
       );
       console.debug(`🐞 Scanned: ${file}`);
       console.debug(`  -> analytics: ${JSON.stringify(analytics)}`);
@@ -109,7 +85,7 @@ async function scanAnyInternal(
  * @returns {Promise<string>}
  */
 async function computeHash(filePath) {
-  const hashComputation = createHash("sha1");
+  const hashComputation = createHash('sha1');
   const fd = await fs.open(filePath);
   const readStream = fd.createReadStream();
 
@@ -118,13 +94,13 @@ async function computeHash(filePath) {
     resolve = r;
     reject = rej;
   });
-  readStream.on("data", (data) => hashComputation.update(data));
-  readStream.on("error", (err) => {
+  readStream.on('data', (data) => hashComputation.update(data));
+  readStream.on('error', (err) => {
     reject(err);
     fd.close();
   });
-  readStream.on("end", () => {
-    resolve(hashComputation.digest("hex"));
+  readStream.on('end', () => {
+    resolve(hashComputation.digest('hex'));
     fd.close();
   });
 
