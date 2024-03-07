@@ -1,0 +1,31 @@
+{
+  "private": true,
+  "name": "backup-duplicates-finder",
+  "description": "Find duplicates files in your backups before restoring them",
+  "version": "0.0.0",
+  "type": "module",
+  "exports": {
+    "./package.json": "./package.json",
+    ".": "./src/main.mjs"
+  },
+  "scripts": {
+    "check": "node src/main.mjs"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/dubzzz/backup-duplicates-finder.git"
+  },
+  "author": "Nicolas DUBIEN <github@dubien.org>",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/dubzzz/backup-duplicates-finder/issues"
+  },
+  "homepage": "https://github.com/dubzzz/backup-duplicates-finder/blob/main/README.md",
+  "funding": [
+    {
+      "type": "individual",
+      "url": "https://github.com/sponsors/dubzzz"
+    }
+  ],
+  "packageManager": "yarn@4.1.1"
+}
