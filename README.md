@@ -19,5 +19,9 @@ As such I created this script. I takes an old backup — refered as _copy_ in th
 ## Using it
 
 ```sh
-# Not ready yet
+# Install the dependencies needed by the project to run
+yarn
+
+# Check if something from "/c/old-backup/" is missing in "/c/final-directory/"
+yarn check /c/old-backup/ /c/final-directory/
 ```

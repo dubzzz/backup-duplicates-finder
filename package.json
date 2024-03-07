@@ -12,6 +12,9 @@
     "check": "node src/main.mjs",
     "format": "prettier --write ."
   },
+  "dependencies": {
+    "yargs": "^17.7.2"
+  },
   "devDependencies": {
     "prettier": "^3.2.5"
   },
