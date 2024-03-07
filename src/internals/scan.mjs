@@ -70,6 +70,7 @@ async function scanAnyInternal(dir, file, withHash, fileList, knownFilePathToHas
       let analytics;
       const sha1sum = await runInPool(
         () => computeHash(filePath),
+        stats.size,
         (a) => (analytics = a),
       );
       log(
