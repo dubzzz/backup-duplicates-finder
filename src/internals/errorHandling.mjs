@@ -7,7 +7,7 @@ process.on('unhandledRejection', (reason, p) => {
   process.exit(1);
 });
 process.on('uncaughtException', (error) => {
-  log(['Caught exception:', error], [], 'error');
+  log(['Uncaught exception:', error], [], 'error');
   log(`Exception origin: ${error.stack}`, [], 'error');
   process.exit(1);
 });
