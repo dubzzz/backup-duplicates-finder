@@ -141,7 +141,7 @@ async function withRetries(action, count) {
     } catch (err) {
       log(
         `Action failed to execute properly, ${i + 1 === count ? 'canceled' : 'might re-execute itself later'}`,
-        [`number of attempts: ${i + 1}`, `max number of attempts: ${count}`],
+        [`number of attempts: ${i + 1}`, `max number of attempts: ${count}`, [`error:`, err]],
         'warn',
       );
       errors.push(err);
