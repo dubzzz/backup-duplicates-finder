@@ -8,12 +8,18 @@ import { log } from './logger.mjs';
 /**
  * @param {string} dir
  * @param {Map<string, string|undefined>|undefined} knownFilePathToHash
- * @param {{withHash: boolean}} options
+ * @param {{withHash: boolean, continueOnFailure:boolean}} options
  * @returns {Promise<{name: string, path:string, hash:string|undefined}[]>}
  */
 export async function scanDirectory(dir, knownFilePathToHash, options) {
   const fileList = [];
-  await scanDirectoryInternal(dir, options.withHash, fileList, knownFilePathToHash ?? new Map()).catch((err) => {
+  await scanDirectoryInternal(
+    dir,
+    options.withHash,
+    options.continueOnFailure,
+    fileList,
+    knownFilePathToHash ?? new Map(),
+  ).catch((err) => {
     log('Scan directory aborted', [['error:', err]], 'error');
     throw new Error(`Scan directory aborted`, { cause: err });
   });
@@ -23,11 +29,12 @@ export async function scanDirectory(dir, knownFilePathToHash, options) {
 /**
  * @param {string} dir
  * @param {boolean} withHash
+ * @param {boolean} continueOnFailure
  * @param {{name: string, path:string, hash:string|undefined}[]} fileList
  * @param {Map<string, string|undefined>} knownFilePathToHash
  * @returns {Promise<void>}
  */
-async function scanDirectoryInternal(dir, withHash, fileList, knownFilePathToHash) {
+async function scanDirectoryInternal(dir, withHash, continueOnFailure, fileList, knownFilePathToHash) {
   const files = await fs.readdir(dir);
 
   let resolveDirectoryDone, rejectDirectoryDone;
@@ -37,11 +44,15 @@ async function scanDirectoryInternal(dir, withHash, fileList, knownFilePathToHas
   });
 
   let missing = 0;
+  const onSuccess = () => {
+    if (--missing === 0) resolveDirectoryDone();
+  };
   for (const file of files) {
     ++missing;
-    scanAnyInternal(dir, file, withHash, fileList, knownFilePathToHash).then(() => {
-      if (--missing === 0) resolveDirectoryDone();
-    }, rejectDirectoryDone);
+    scanAnyInternal(dir, file, withHash, continueOnFailure, fileList, knownFilePathToHash).then(
+      onSuccess,
+      continueOnFailure ? onSuccess : rejectDirectoryDone,
+    );
   }
   if (missing === 0) {
     resolveDirectoryDone();
@@ -53,16 +64,17 @@ async function scanDirectoryInternal(dir, withHash, fileList, knownFilePathToHas
  * @param {string} dir
  * @param {string} file
  * @param {boolean} withHash
+ * @param {boolean} continueOnFailure
  * @param {{name: string, path:string, hash:string|undefined}[]} fileList
  * @param {Map<string, string|undefined>} knownFilePathToHash
  * @returns {Promise<void>}
  */
-async function scanAnyInternal(dir, file, withHash, fileList, knownFilePathToHash) {
+async function scanAnyInternal(dir, file, withHash, continueOnFailure, fileList, knownFilePathToHash) {
   const filePath = path.join(dir, file);
   const stats = await fs.stat(filePath);
 
   if (stats.isDirectory()) {
-    await scanDirectoryInternal(filePath, withHash, fileList, knownFilePathToHash);
+    await scanDirectoryInternal(filePath, withHash, continueOnFailure, fileList, knownFilePathToHash);
   } else if (!withHash) {
     fileList.push({ name: file, path: filePath, hash: undefined });
   } else if (stats.isFile()) {

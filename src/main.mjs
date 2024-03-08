@@ -26,12 +26,17 @@ const argv = await yargs(hideBin(process.argv))
     type: 'boolean',
     description: 'Do not use the file name of the files to compare them together',
   })
+  .option('no-fail', {
+    type: 'boolean',
+    description: 'Ignore failures occuring when traversing the tree of files',
+  })
   .demandCommand(2, 2)
   .parse();
 
 const checksumIncludesHash = !argv['no-hash'];
 const checksumIncludesName = !argv['no-name'];
 const isIncremental = !!argv['incremental'];
+const continueOnFailure = !argv['no-fail'];
 const [sourcePath, copyPath] = argv._;
 
 const sourceContent = new Map(await listFilesRecursively(String(sourcePath)));
@@ -65,7 +70,7 @@ if (numMissing !== 0) {
  * @returns {Promise<[string, {file:string,filePath:string}][]>}
  */
 async function listFilesRecursively(dir) {
-  const options = { withHash: checksumIncludesHash, isIncremental };
+  const options = { withHash: checksumIncludesHash, isIncremental, continueOnFailure };
   const results = await cachedScanDirectory(dir, options);
   return results.map((entry) => [
     [checksumIncludesHash ? `hash:${entry.hash}` : '', checksumIncludesName ? `file:${entry.name}` : ''].join(':'),

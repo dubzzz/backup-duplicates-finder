@@ -10,7 +10,7 @@ const __dirname = url.fileURLToPath(new URL('.', import.meta.url));
 
 /**
  * @param {string} dir
- * @param {{withHash: boolean, isIncremental:boolean}} options
+ * @param {{withHash: boolean, isIncremental:boolean,continueOnFailure:boolean}} options
  * @returns {Promise<{name: string, path:string, hash:string|undefined}[]>}
  */
 export async function cachedScanDirectory(dir, options) {
