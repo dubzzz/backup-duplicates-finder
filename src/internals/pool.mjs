@@ -1,23 +1,19 @@
+import { MaxHeap } from './maxHeap.mjs';
+
 // @ts-check
 let runningCount = 0;
 const maxRunningCount = 100;
-const waitingList = []; // switch to a max-heap
+const waitingList = new MaxHeap();
 
 /**
  * @returns {void}
  */
 function releaseOneInPool() {
-  if (waitingList.length === 0) {
+  if (waitingList.isEmpty()) {
     return;
   }
-  let indexMax = 0;
-  for (let i = 1; i !== waitingList.length; ++i) {
-    if (waitingList[i].weight > waitingList[indexMax].weight) {
-      indexMax = i;
-    }
-  }
-  const [selected] = waitingList.splice(indexMax, 1);
-  selected.action();
+  const action = waitingList.peak();
+  action();
 }
 
 /**
@@ -45,14 +41,14 @@ function registerInPool(asyncFn, weight, onDone, onError) {
     );
   };
   if (runningCount < maxRunningCount) action();
-  else waitingList.push({ weight, action });
+  else waitingList.add(weight, action);
 }
 
 /**
  * @template TOut
  * @param {() => Promise<TOut>} asyncFn
  * @param {number} weight
- * @param {(analytics: {timeInPool:number, timeExecution: number}) => void} onAnalytics
+ * @param {(analytics: {timeInPool:number, timeExecution: number, weight:number, ratioWaiting: number}) => void} onAnalytics
  * @returns {Promise<TOut>}
  */
 export function runInPool(asyncFn, weight, onAnalytics) {
@@ -67,10 +63,10 @@ export function runInPool(asyncFn, weight, onAnalytics) {
       const startSelfTimeMs = performance.now();
       const data = await asyncFn();
       const endTimeMs = performance.now();
-      onAnalytics({
-        timeExecution: endTimeMs - startSelfTimeMs,
-        timeInPool: endTimeMs - startPoolTimeMs,
-      });
+      const timeExecution = endTimeMs - startSelfTimeMs;
+      const timeInPool = endTimeMs - startPoolTimeMs;
+      const ratioWaiting = (timeInPool - timeExecution) / timeInPool;
+      onAnalytics({ timeExecution, timeInPool, ratioWaiting, weight });
       return data;
     },
     weight,
@@ -84,5 +80,5 @@ export function runInPool(asyncFn, weight, onAnalytics) {
  * @returns {{running: number, pending: number}}
  */
 export function poolSize() {
-  return { running: runningCount, pending: waitingList.length };
+  return { running: runningCount, pending: waitingList.size() };
 }
