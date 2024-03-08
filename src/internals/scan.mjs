@@ -127,6 +127,11 @@ async function withRetries(action, count) {
       const out = await action();
       return out;
     } catch (err) {
+      log(
+        `Action failed to execute properly, ${i + 1 === count ? 'canceled' : 'might re-execute itself later'}`,
+        [`number of attempts: ${i + 1}`, `max number of attempts: ${count}`],
+        'warn',
+      );
       errors.push(err);
     }
   }
