@@ -13,7 +13,10 @@ import { log } from './logger.mjs';
  */
 export async function scanDirectory(dir, knownFilePathToHash, options) {
   const fileList = [];
-  await scanDirectoryInternal(dir, options.withHash, fileList, knownFilePathToHash ?? new Map());
+  await scanDirectoryInternal(dir, options.withHash, fileList, knownFilePathToHash ?? new Map()).catch((err) => {
+    log('Scan directory aborted', [['error:', err]], 'error');
+    throw new Error(`Scan directory aborted`, { cause: err });
+  });
   return fileList;
 }
 
