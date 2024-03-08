@@ -23,7 +23,7 @@ function rightChildIndex(index) {
 }
 
 /**
- * @template {T}
+ * @template T
  * @param {T[]} tab
  * @param {number} indexA
  * @param {number} indexB
@@ -36,7 +36,7 @@ function swap(tab, indexA, indexB) {
 }
 
 /**
- * @template {T}
+ * @template T
  */
 export class MaxHeap {
   constructor() {

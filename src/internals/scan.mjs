@@ -68,10 +68,14 @@ async function scanAnyInternal(dir, file, withHash, fileList, knownFilePathToHas
       fileList.push({ name: file, path: filePath, hash: alreadyHash });
     } else {
       let analytics;
-      const sha1sum = await runInPool(
-        () => computeHash(filePath),
-        stats.size,
-        (a) => (analytics = a),
+      const sha1sum = await withRetries(
+        () =>
+          runInPool(
+            () => computeHash(filePath),
+            stats.size,
+            (a) => (analytics = a),
+          ),
+        5,
       );
       log(
         `Scanned: ${file}`,
@@ -99,7 +103,7 @@ async function computeHash(filePath) {
   });
   readStream.on('data', (data) => hashComputation.update(data));
   readStream.on('error', (err) => {
-    reject(err);
+    reject(new Error(`Failed to compute the hash of ${filePath}`, { cause: err }));
     fd.close();
   });
   readStream.on('end', () => {
@@ -108,4 +112,23 @@ async function computeHash(filePath) {
   });
 
   return promise;
+}
+
+/**
+ * @template T
+ * @param {() => Promise<T>} action
+ * @param {number} count
+ * @returns {Promise<T>}
+ */
+async function withRetries(action, count) {
+  let lastError = null;
+  for (let i = 0; i < count; ++i) {
+    try {
+      const out = await action();
+      return out;
+    } catch (err) {
+      lastError = err;
+    }
+  }
+  throw new Error(`Failed after ${count} retries`, { cause: lastError });
 }
