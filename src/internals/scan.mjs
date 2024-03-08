@@ -74,7 +74,10 @@ async function scanAnyInternal(dir, file, withHash, fileList, knownFilePathToHas
       const sha1sum = await withRetries(
         () =>
           runInPool(
-            () => computeHash(filePath),
+            () =>
+              computeHash(filePath).catch((err) => {
+                throw new Error(`Failed to compute the hash of ${filePath}`, { cause: err });
+              }),
             stats.size,
             (a) => (analytics = a),
           ),
@@ -106,12 +109,18 @@ async function computeHash(filePath) {
   });
   readStream.on('data', (data) => hashComputation.update(data));
   readStream.on('error', (err) => {
-    reject(new Error(`Failed to compute the hash of ${filePath}`, { cause: err }));
-    fd.close();
+    try {
+      fd.close();
+    } finally {
+      reject(err);
+    }
   });
   readStream.on('end', () => {
-    resolve(hashComputation.digest('hex'));
-    fd.close();
+    try {
+      fd.close();
+    } finally {
+      resolve(hashComputation.digest('hex'));
+    }
   });
 
   return promise;
