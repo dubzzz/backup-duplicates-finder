@@ -65,7 +65,7 @@ async function scanAnyInternal(dir, file, withHash, fileList, knownFilePathToHas
     await scanDirectoryInternal(filePath, withHash, fileList, knownFilePathToHash);
   } else if (!withHash) {
     fileList.push({ name: file, path: filePath, hash: undefined });
-  } else {
+  } else if (stats.isFile()) {
     const alreadyHash = knownFilePathToHash.get(filePath);
     if (alreadyHash !== undefined) {
       fileList.push({ name: file, path: filePath, hash: alreadyHash });
@@ -90,6 +90,8 @@ async function scanAnyInternal(dir, file, withHash, fileList, knownFilePathToHas
       );
       fileList.push({ name: file, path: filePath, hash: sha1sum });
     }
+  } else {
+    log('Skipped non directory or file element', [`got: ${filePath}`], 'info');
   }
 }
 
