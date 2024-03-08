@@ -121,14 +121,14 @@ async function computeHash(filePath) {
  * @returns {Promise<T>}
  */
 async function withRetries(action, count) {
-  let lastError = null;
+  const errors = [];
   for (let i = 0; i < count; ++i) {
     try {
       const out = await action();
       return out;
     } catch (err) {
-      lastError = err;
+      errors.push(err);
     }
   }
-  throw new Error(`Failed after ${count} retries`, { cause: lastError });
+  throw new AggregateError(errors, `Failed after ${count} retries`);
 }
