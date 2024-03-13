@@ -49,13 +49,13 @@ const argv = await yargs(hideBin(process.argv))
   .demandCommand(2, 2)
   .parse();
 
-const checksumIncludesHash = !argv['no-hash'];
-const checksumIncludesName = !argv['no-name'];
-const checksumIncludesCreate = !argv['no-date'] || !argv['no-create'];
-const checksumIncludesChange = !argv['no-date'] || !argv['no-change'];
-const checksumIncludesModify = !argv['no-date'] || !argv['no-modify'];
+const checksumIncludesHash = argv['hash'] !== false;
+const checksumIncludesName = argv['name'] !== false;
+const checksumIncludesCreate = argv['date'] !== false && argv['create'] !== false;
+const checksumIncludesChange = argv['date'] !== false && argv['change'] !== false;
+const checksumIncludesModify = argv['date'] !== false && argv['modify'] !== false;
 const isIncremental = !!argv['incremental'];
-const continueOnFailure = !argv['no-fail'];
+const continueOnFailure = argv['fail'] !== false;
 const [copyPath, sourcePath] = argv._;
 
 const sourceContent = new Map(await listFilesRecursively(String(sourcePath)));
@@ -68,6 +68,8 @@ const logDetails = [
   `with creation date: ${checksumIncludesCreate ? 'ON' : 'OFF'}`,
   `with change date: ${checksumIncludesChange ? 'ON' : 'OFF'}`,
   `with modify date: ${checksumIncludesModify ? 'ON' : 'OFF'}`,
+  `with continue on failure: ${continueOnFailure ? 'ON' : 'OFF'}`,
+  `argv: ${JSON.stringify(argv)}`,
 ];
 
 log(`Check if some entries of "copy" are missing in "source"`, logDetails, 'info');
