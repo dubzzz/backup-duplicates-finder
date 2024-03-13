@@ -23,5 +23,6 @@ As such I created this script. I takes an old backup — refered as _copy_ in th
 yarn
 
 # Check if something from "/c/old-backup/" is missing in "/c/final-directory/"
+# As if you planned to copy it (via cp) to "/c/final-directory/"
 yarn check -i /c/old-backup/ /c/final-directory/
 ```

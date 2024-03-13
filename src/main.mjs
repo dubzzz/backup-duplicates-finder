@@ -37,7 +37,7 @@ const checksumIncludesHash = !argv['no-hash'];
 const checksumIncludesName = !argv['no-name'];
 const isIncremental = !!argv['incremental'];
 const continueOnFailure = !argv['no-fail'];
-const [sourcePath, copyPath] = argv._;
+const [copyPath, sourcePath] = argv._;
 
 const sourceContent = new Map(await listFilesRecursively(String(sourcePath)));
 const copyContent = new Map(await listFilesRecursively(String(copyPath)));
@@ -60,7 +60,7 @@ for (const [checksum, { filePath }] of copyContent) {
 if (numMissing !== 0) {
   log(`Found ${numMissing} elements in copy that cannot match anything in source`, logDetails);
 } else {
-  log(`Every element known is copy is available in source`, logDetails);
+  log(`Every element known in copy is available in source`, logDetails);
 }
 
 // Helpers
