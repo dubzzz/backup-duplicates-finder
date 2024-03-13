@@ -30,11 +30,30 @@ const argv = await yargs(hideBin(process.argv))
     type: 'boolean',
     description: 'Ignore failures occuring when traversing the tree of files',
   })
+  .option('no-create', {
+    type: 'boolean',
+    description: 'Ignore creation date of the file',
+  })
+  .option('no-change', {
+    type: 'boolean',
+    description: 'Ignore last change date of the file',
+  })
+  .option('no-modify', {
+    type: 'boolean',
+    description: 'Ignore last modify date of the file',
+  })
+  .option('no-date', {
+    type: 'boolean',
+    description: 'Ignore any date related field of the file',
+  })
   .demandCommand(2, 2)
   .parse();
 
 const checksumIncludesHash = !argv['no-hash'];
 const checksumIncludesName = !argv['no-name'];
+const checksumIncludesCreate = !argv['no-date'] || !argv['no-create'];
+const checksumIncludesChange = !argv['no-date'] || !argv['no-change'];
+const checksumIncludesModify = !argv['no-date'] || !argv['no-modify'];
 const isIncremental = !!argv['incremental'];
 const continueOnFailure = !argv['no-fail'];
 const [copyPath, sourcePath] = argv._;
@@ -46,6 +65,9 @@ const logDetails = [
   `with copy: ${copyPath}`,
   `with hash: ${checksumIncludesHash ? 'ON' : 'OFF'}`,
   `with file: ${checksumIncludesName ? 'ON' : 'OFF'}`,
+  `with creation date: ${checksumIncludesCreate ? 'ON' : 'OFF'}`,
+  `with change date: ${checksumIncludesChange ? 'ON' : 'OFF'}`,
+  `with modify date: ${checksumIncludesModify ? 'ON' : 'OFF'}`,
 ];
 
 log(`Check if some entries of "copy" are missing in "source"`, logDetails, 'info');
@@ -73,7 +95,13 @@ async function listFilesRecursively(dir) {
   const options = { withHash: checksumIncludesHash, isIncremental, continueOnFailure };
   const results = await cachedScanDirectory(dir, options);
   return results.map((entry) => [
-    [checksumIncludesHash ? `hash:${entry.hash}` : '', checksumIncludesName ? `file:${entry.name}` : ''].join(':'),
+    [
+      checksumIncludesHash ? `hash:${entry.hash}` : '',
+      checksumIncludesName ? `file:${entry.name}` : '',
+      checksumIncludesCreate ? `create:${entry.creationMs}` : '',
+      checksumIncludesChange ? `change:${entry.lastChangedMs}` : '',
+      checksumIncludesModify ? `modify:${entry.lastModifiedMs}` : '',
+    ].join(':'),
     { file: entry.name, filePath: entry.path },
   ]);
 }

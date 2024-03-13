@@ -30,7 +30,7 @@ export async function scanDirectory(dir, knownFilePathToHash, options) {
  * @param {string} dir
  * @param {boolean} withHash
  * @param {boolean} continueOnFailure
- * @param {{name: string, path:string, hash:string|undefined}[]} fileList
+ * @param {{name: string, path:string, hash:string|undefined, creationMs:number, lastChangedMs:number, lastModifiedMs:number}[]} fileList
  * @param {Map<string, string|undefined>} knownFilePathToHash
  * @returns {Promise<void>}
  */
@@ -65,7 +65,7 @@ async function scanDirectoryInternal(dir, withHash, continueOnFailure, fileList,
  * @param {string} file
  * @param {boolean} withHash
  * @param {boolean} continueOnFailure
- * @param {{name: string, path:string, hash:string|undefined}[]} fileList
+ * @param {{name: string, path:string, hash:string|undefined, creationMs:number, lastChangedMs:number, lastModifiedMs:number}[]} fileList
  * @param {Map<string, string|undefined>} knownFilePathToHash
  * @returns {Promise<void>}
  */
@@ -75,32 +75,41 @@ async function scanAnyInternal(dir, file, withHash, continueOnFailure, fileList,
 
   if (stats.isDirectory()) {
     await scanDirectoryInternal(filePath, withHash, continueOnFailure, fileList, knownFilePathToHash);
-  } else if (!withHash) {
-    fileList.push({ name: file, path: filePath, hash: undefined });
   } else if (stats.isFile()) {
-    const alreadyHash = knownFilePathToHash.get(filePath);
-    if (alreadyHash !== undefined) {
-      fileList.push({ name: file, path: filePath, hash: alreadyHash });
+    const shared = {
+      name: file,
+      path: filePath,
+      creationMs: stats.birthtimeMs,
+      lastChangedMs: stats.ctimeMs,
+      lastModifiedMs: stats.mtimeMs,
+    };
+    if (!withHash) {
+      fileList.push({ ...shared, hash: undefined });
     } else {
-      let analytics;
-      const sha1sum = await withRetries(
-        () =>
-          runInPool(
-            () =>
-              computeHash(filePath).catch((err) => {
-                throw new Error(`Failed to compute the hash of ${filePath}`, { cause: err });
-              }),
-            stats.size,
-            (a) => (analytics = a),
-          ),
-        5,
-      );
-      log(
-        `Scanned: ${file}`,
-        [`analytics: ${JSON.stringify(analytics)}`, `hash: ${sha1sum}`, `pool: ${JSON.stringify(poolSize())}`],
-        'debug',
-      );
-      fileList.push({ name: file, path: filePath, hash: sha1sum });
+      const alreadyHash = knownFilePathToHash.get(filePath);
+      if (alreadyHash !== undefined) {
+        fileList.push({ ...shared, hash: alreadyHash });
+      } else {
+        let analytics;
+        const sha1sum = await withRetries(
+          () =>
+            runInPool(
+              () =>
+                computeHash(filePath).catch((err) => {
+                  throw new Error(`Failed to compute the hash of ${filePath}`, { cause: err });
+                }),
+              stats.size,
+              (a) => (analytics = a),
+            ),
+          5,
+        );
+        log(
+          `Scanned: ${file}`,
+          [`analytics: ${JSON.stringify(analytics)}`, `hash: ${sha1sum}`, `pool: ${JSON.stringify(poolSize())}`],
+          'debug',
+        );
+        fileList.push({ ...shared, hash: sha1sum });
+      }
     }
   } else {
     log('Skipped non directory or file element', [`got: ${filePath}`], 'info');

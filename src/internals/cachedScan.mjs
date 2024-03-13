@@ -11,7 +11,7 @@ const __dirname = url.fileURLToPath(new URL('.', import.meta.url));
 /**
  * @param {string} dir
  * @param {{withHash: boolean, isIncremental:boolean,continueOnFailure:boolean}} options
- * @returns {Promise<{name: string, path:string, hash:string|undefined}[]>}
+ * @returns {Promise<{name: string, path:string, hash:string|undefined, creationMs:number, lastChangedMs:number, lastModifiedMs:number}[]>}
  */
 export async function cachedScanDirectory(dir, options) {
   const cachedResultsPath = path.join(
