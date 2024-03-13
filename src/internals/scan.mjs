@@ -130,7 +130,16 @@ async function computeHash(filePath) {
     resolve = r;
     reject = rej;
   });
-  readStream.on('data', (data) => hashComputation.update(data));
+
+  hashComputation.setEncoding('hex');
+  readStream.on('end', function () {
+    try {
+      fd.close();
+    } finally {
+      hashComputation.end();
+      resolve(hashComputation.read());
+    }
+  });
   readStream.on('error', (err) => {
     try {
       fd.close();
@@ -138,13 +147,7 @@ async function computeHash(filePath) {
       reject(err);
     }
   });
-  readStream.on('end', () => {
-    try {
-      fd.close();
-    } finally {
-      resolve(hashComputation.digest('hex'));
-    }
-  });
+  readStream.pipe(hashComputation);
 
   return promise;
 }
