@@ -35,6 +35,7 @@ export async function cachedScanDirectory(dir, options) {
     }
   } catch (err) {
     if (options.isIncremental && options.withHash) {
+      const normalizedDir = path.normalize(dir);
       const { appendLine } = log(
         `Aggregating data from already known directories for a faster incremental scan`,
         [],
@@ -45,15 +46,20 @@ export async function cachedScanDirectory(dir, options) {
       for (const file of files) {
         if (file.isFile()) {
           const fileFullPath = path.join(file.path, file.name);
-          appendLine(`Reading from ${file.path}`);
+          appendLine(`Reading from ${fileFullPath}`);
           const fileContentRaw = await fs.readFile(fileFullPath);
           const fileContent = JSON.parse(fileContentRaw.toString());
+
+          let addedOne = false;
           for (const item of fileContent) {
-            if (typeof item.hash === 'string') {
+            if (typeof item.hash === 'string' && path.normalize(item.path).includes(normalizedDir)) {
+              addedOne = true;
               cachedResults.push(item);
             }
           }
-          appendLine(`Total items count: ${cachedResults.length}`);
+          if (addedOne) {
+            appendLine(`Total items count: ${cachedResults.length}`);
+          }
         }
       }
     }
