@@ -30,10 +30,6 @@ const argv = await yargs(hideBin(process.argv))
     type: 'boolean',
     description: 'Ignore failures occuring when traversing the tree of files',
   })
-  .option('no-create', {
-    type: 'boolean',
-    description: 'Ignore creation date of the file',
-  })
   .option('no-change', {
     type: 'boolean',
     description: 'Ignore last change date of the file',
@@ -51,7 +47,6 @@ const argv = await yargs(hideBin(process.argv))
 
 const checksumIncludesHash = argv['hash'] !== false;
 const checksumIncludesName = argv['name'] !== false;
-const checksumIncludesCreate = argv['date'] !== false && argv['create'] !== false;
 const checksumIncludesChange = argv['date'] !== false && argv['change'] !== false;
 const checksumIncludesModify = argv['date'] !== false && argv['modify'] !== false;
 const isIncremental = !!argv['incremental'];
@@ -65,7 +60,6 @@ const logDetails = [
   `with copy: ${copyPath}`,
   `with hash: ${checksumIncludesHash ? 'ON' : 'OFF'}`,
   `with file: ${checksumIncludesName ? 'ON' : 'OFF'}`,
-  `with creation date: ${checksumIncludesCreate ? 'ON' : 'OFF'}`,
   `with change date: ${checksumIncludesChange ? 'ON' : 'OFF'}`,
   `with modify date: ${checksumIncludesModify ? 'ON' : 'OFF'}`,
   `with continue on failure: ${continueOnFailure ? 'ON' : 'OFF'}`,
@@ -100,7 +94,6 @@ async function listFilesRecursively(dir) {
     [
       checksumIncludesHash ? `hash:${entry.hash}` : '',
       checksumIncludesName ? `file:${entry.name}` : '',
-      checksumIncludesCreate ? `create:${entry.creationMs}` : '',
       checksumIncludesChange ? `change:${entry.lastChangedMs}` : '',
       checksumIncludesModify ? `modify:${entry.lastModifiedMs}` : '',
     ].join(':'),

@@ -30,7 +30,7 @@ export async function scanDirectory(dir, knownFilePathToHash, options) {
  * @param {string} dir
  * @param {boolean} withHash
  * @param {boolean} continueOnFailure
- * @param {{name: string, path:string, hash:string|undefined, creationMs:number, lastChangedMs:number, lastModifiedMs:number}[]} fileList
+ * @param {{name: string, path:string, hash:string|undefined, lastChangedMs:number, lastModifiedMs:number}[]} fileList
  * @param {Map<string, string|undefined>} knownFilePathToHash
  * @returns {Promise<void>}
  */
@@ -65,7 +65,7 @@ async function scanDirectoryInternal(dir, withHash, continueOnFailure, fileList,
  * @param {string} file
  * @param {boolean} withHash
  * @param {boolean} continueOnFailure
- * @param {{name: string, path:string, hash:string|undefined, creationMs:number, lastChangedMs:number, lastModifiedMs:number}[]} fileList
+ * @param {{name: string, path:string, hash:string|undefined, lastChangedMs:number, lastModifiedMs:number}[]} fileList
  * @param {Map<string, string|undefined>} knownFilePathToHash
  * @returns {Promise<void>}
  */
@@ -79,7 +79,6 @@ async function scanAnyInternal(dir, file, withHash, continueOnFailure, fileList,
     const shared = {
       name: file,
       path: filePath,
-      creationMs: stats.birthtimeMs,
       lastChangedMs: stats.ctimeMs,
       lastModifiedMs: stats.mtimeMs,
     };
