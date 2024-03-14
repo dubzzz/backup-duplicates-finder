@@ -14,19 +14,17 @@ const __dirname = url.fileURLToPath(new URL('.', import.meta.url));
  * @returns {Promise<{name: string, path:string, hash:string|undefined, creationMs:number, lastChangedMs:number, lastModifiedMs:number}[]>}
  */
 export async function cachedScanDirectory(dir, options) {
+  const cachedResultsDirectoryPath = path.join(__dirname, '..', '..', '.cache');
   const cachedResultsPath = path.join(
-    __dirname,
-    '..',
-    '..',
-    '.cache',
+    cachedResultsDirectoryPath,
     path.basename(dir) + '-' + createHash('sha1').update(dir).digest('hex') + '-' + options.withHash + '.json',
   );
   const printedOptions = JSON.stringify(options);
 
-  let knownFilePathToHash = undefined;
+  let cachedResults = undefined;
   try {
     const cachedResultsRaw = await fs.readFile(cachedResultsPath);
-    const cachedResults = JSON.parse(cachedResultsRaw.toString());
+    cachedResults = JSON.parse(cachedResultsRaw.toString());
     log(
       `Cache found for ${dir} with options ${printedOptions}`,
       [`read from ${cachedResultsPath}`, `got ${cachedResults.length} results`],
@@ -35,8 +33,33 @@ export async function cachedScanDirectory(dir, options) {
     if (!options.isIncremental) {
       return cachedResults;
     }
-    knownFilePathToHash = new Map(cachedResults.map((r) => [r.path, r.hash]));
-  } catch (err) {}
+  } catch (err) {
+    if (options.isIncremental && options.withHash) {
+      const { appendLine } = log(
+        `Aggregating data from already known directories for a faster incremental scan`,
+        [],
+        'info',
+      );
+      cachedResults = [];
+      const files = await fs.readdir(cachedResultsDirectoryPath, { withFileTypes: true });
+      for (const file of files) {
+        if (file.isFile()) {
+          const fileFullPath = path.join(file.path, file.name);
+          appendLine(`Reading from ${file.path}`);
+          const fileContentRaw = await fs.readFile(fileFullPath);
+          const fileContent = JSON.parse(fileContentRaw.toString());
+          for (const item of fileContent) {
+            if (typeof item.hash === 'string') {
+              cachedResults.push(item);
+            }
+          }
+          appendLine(`Total items count: ${cachedResults.length}`);
+        }
+      }
+    }
+  }
+  const knownFilePathToHash =
+    cachedResults !== undefined ? new Map(cachedResults.map((r) => [r.path, r.hash])) : undefined;
 
   const { appendLine } =
     knownFilePathToHash === undefined
