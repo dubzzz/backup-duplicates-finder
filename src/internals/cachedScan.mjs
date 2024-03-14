@@ -41,7 +41,7 @@ export async function cachedScanDirectory(dir, options) {
     if (options.isIncremental && options.withHash) {
       const normalizedDir = path.normalize(dir);
       const { appendLine } = log(
-        `Aggregating data from already known directories for a faster incremental scan`,
+        `Aggregating data from already known directories for a faster incremental scan for ${dir}`,
         [],
         'info',
       );
@@ -66,6 +66,7 @@ export async function cachedScanDirectory(dir, options) {
           }
         }
       }
+      cachedResults.sort((a, b) => b.lastChangedMs - a.lastChangedMs);
     }
   }
   const knownFilePathToHash =
