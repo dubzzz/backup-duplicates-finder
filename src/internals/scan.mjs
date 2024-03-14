@@ -123,7 +123,7 @@ async function scanAnyInternal(dir, file, withHash, continueOnFailure, fileList,
 async function computeHash(filePath) {
   const hashComputation = createHash('sha1');
   const fd = await fs.open(filePath);
-  const readStream = fd.createReadStream();
+  const readStream = fd.createReadStream({ autoClose: true });
 
   let resolve, reject;
   const promise = new Promise((r, rej) => {
@@ -133,19 +133,11 @@ async function computeHash(filePath) {
 
   hashComputation.setEncoding('hex');
   readStream.on('end', function () {
-    try {
-      fd.close();
-    } finally {
-      hashComputation.end();
-      resolve(hashComputation.read());
-    }
+    hashComputation.end();
+    resolve(hashComputation.read());
   });
   readStream.on('error', (err) => {
-    try {
-      fd.close();
-    } finally {
-      reject(err);
-    }
+    reject(err);
   });
   readStream.pipe(hashComputation);
 
