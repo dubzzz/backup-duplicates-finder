@@ -6,10 +6,19 @@ import { poolSize, runInPool } from './pool.mjs';
 import { log } from './logger.mjs';
 
 /**
+ * @typedef FileDescription
+ * @property {string} name - Name of the file, without the path
+ * @property {string} path - Full path of the file: filePath,
+ * @property {number} lastChangedMs - "Changed" generally refers to any alteration that occurs to the file, whether it's a modification of its content or its metadata
+ * @property {number} lastModifiedMs - "Modified" specifically refers to changes made to the content of the file, such as adding, removing, or editing its contents.
+ * @property {string|undefined} hash - SHA1 hash of the content of the file
+ */
+
+/**
  * @param {string} dir
  * @param {Map<string, string|undefined>|undefined} knownFilePathToHash
  * @param {{withHash: boolean, continueOnFailure:boolean}} options
- * @returns {Promise<{name: string, path:string, hash:string|undefined}[]>}
+ * @returns {Promise<FileDescription[]>}
  */
 export async function scanDirectory(dir, knownFilePathToHash, options) {
   const fileList = [];
@@ -30,7 +39,7 @@ export async function scanDirectory(dir, knownFilePathToHash, options) {
  * @param {string} dir
  * @param {boolean} withHash
  * @param {boolean} continueOnFailure
- * @param {{name: string, path:string, hash:string|undefined, lastChangedMs:number, lastModifiedMs:number}[]} fileList
+ * @param {FileDescription[]} fileList
  * @param {Map<string, string|undefined>} knownFilePathToHash
  * @returns {Promise<void>}
  */
@@ -65,7 +74,7 @@ async function scanDirectoryInternal(dir, withHash, continueOnFailure, fileList,
  * @param {string} file
  * @param {boolean} withHash
  * @param {boolean} continueOnFailure
- * @param {{name: string, path:string, hash:string|undefined, lastChangedMs:number, lastModifiedMs:number}[]} fileList
+ * @param {FileDescription[]} fileList
  * @param {Map<string, string|undefined>} knownFilePathToHash
  * @returns {Promise<void>}
  */
@@ -76,14 +85,16 @@ async function scanAnyInternal(dir, file, withHash, continueOnFailure, fileList,
   if (stats.isDirectory()) {
     await scanDirectoryInternal(filePath, withHash, continueOnFailure, fileList, knownFilePathToHash);
   } else if (stats.isFile()) {
+    /** @type {FileDescription} */
     const shared = {
       name: file,
       path: filePath,
       lastChangedMs: stats.ctimeMs,
       lastModifiedMs: stats.mtimeMs,
+      hash: undefined,
     };
     if (!withHash) {
-      fileList.push({ ...shared, hash: undefined });
+      fileList.push({ ...shared });
     } else {
       const alreadyHash = knownFilePathToHash.get(filePath);
       if (alreadyHash !== undefined) {

@@ -6,12 +6,16 @@ import { createHash } from 'crypto';
 import { scanDirectory } from './scan.mjs';
 import { log } from './logger.mjs';
 
+/**
+ * @typedef {import('./scan.mjs').FileDescription} FileDescription
+ */
+
 const __dirname = url.fileURLToPath(new URL('.', import.meta.url));
 
 /**
  * @param {string} dir
  * @param {{withHash: boolean, isIncremental:boolean,continueOnFailure:boolean}} options
- * @returns {Promise<{name: string, path:string, hash:string|undefined, lastChangedMs:number, lastModifiedMs:number}[]>}
+ * @returns {Promise<FileDescription[]>}
  */
 export async function cachedScanDirectory(dir, options) {
   const cachedResultsDirectoryPath = path.join(__dirname, '..', '..', '.cache');
