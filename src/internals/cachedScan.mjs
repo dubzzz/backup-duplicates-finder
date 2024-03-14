@@ -13,6 +13,26 @@ import { log } from './logger.mjs';
 const __dirname = url.fileURLToPath(new URL('.', import.meta.url));
 
 /**
+ * @type {Map<string, FileDescription[]>}
+ */
+const readCachedResultsFromCache = new Map();
+
+/**
+ * @param {string} fileFullPath
+ * @returns {Promise<FileDescription[]>}
+ */
+async function readCachedResultsFrom(fileFullPath) {
+  const fromCache = readCachedResultsFromCache.get(fileFullPath);
+  if (fromCache !== undefined) {
+    return fromCache;
+  }
+  const fileContentRaw = await fs.readFile(fileFullPath);
+  const fileContent = JSON.parse(fileContentRaw.toString());
+  readCachedResultsFromCache.set(fileFullPath, fileContent);
+  return fileContent;
+}
+
+/**
  * @param {string} dir
  * @param {{withHash: boolean, isIncremental:boolean,continueOnFailure:boolean}} options
  * @returns {Promise<FileDescription[]>}
@@ -27,8 +47,7 @@ export async function cachedScanDirectory(dir, options) {
 
   let cachedResults = undefined;
   try {
-    const cachedResultsRaw = await fs.readFile(cachedResultsPath);
-    cachedResults = JSON.parse(cachedResultsRaw.toString());
+    cachedResults = await readCachedResultsFrom(cachedResultsPath);
     log(
       `Cache found for ${dir} with options ${printedOptions}`,
       [`read from ${cachedResultsPath}`, `got ${cachedResults.length} results`],
@@ -51,8 +70,7 @@ export async function cachedScanDirectory(dir, options) {
         if (file.isFile()) {
           const fileFullPath = path.join(file.path, file.name);
           appendLine(`Reading from ${fileFullPath}`);
-          const fileContentRaw = await fs.readFile(fileFullPath);
-          const fileContent = JSON.parse(fileContentRaw.toString());
+          const fileContent = await readCachedResultsFrom(fileFullPath);
 
           let addedOne = false;
           for (const item of fileContent) {
@@ -81,5 +99,6 @@ export async function cachedScanDirectory(dir, options) {
   await fs.mkdir(path.dirname(cachedResultsPath), { recursive: true });
   await fs.writeFile(cachedResultsPath, JSON.stringify(results));
   appendLine(`wrote cache to ${cachedResultsPath}`);
+  readCachedResultsFromCache.set(cachedResultsPath, results);
   return results;
 }
