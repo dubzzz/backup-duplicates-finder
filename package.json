@@ -9,6 +9,7 @@
     ".": "./src/main.mjs"
   },
   "scripts": {
+    "build": "node src/build.mjs",
     "check": "node src/main.mjs",
     "format": "prettier --write ."
   },
