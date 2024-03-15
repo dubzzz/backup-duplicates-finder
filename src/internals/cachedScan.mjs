@@ -19,13 +19,15 @@ const readCachedResultsFromCache = new Map();
 
 /**
  * @param {string} fileFullPath
+ * @param {() => void} [beforeRead]
  * @returns {Promise<FileDescription[]>}
  */
-async function readCachedResultsFrom(fileFullPath) {
+async function readCachedResultsFrom(fileFullPath, beforeRead) {
   const fromCache = readCachedResultsFromCache.get(fileFullPath);
   if (fromCache !== undefined) {
     return fromCache;
   }
+  beforeRead?.();
   const fileContentRaw = await fs.readFile(fileFullPath);
   const fileContent = JSON.parse(fileContentRaw.toString());
   readCachedResultsFromCache.set(fileFullPath, fileContent);
@@ -69,8 +71,9 @@ export async function cachedScanDirectory(dir, options) {
       for (const file of files) {
         if (file.isFile()) {
           const fileFullPath = path.join(file.path, file.name);
-          appendLine(`Reading from ${fileFullPath}`);
-          const fileContent = await readCachedResultsFrom(fileFullPath);
+          const fileContent = await readCachedResultsFrom(fileFullPath, () =>
+            appendLine(`Reading from ${fileFullPath}`),
+          );
 
           let addedOne = false;
           for (const item of fileContent) {
