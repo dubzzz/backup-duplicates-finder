@@ -55,6 +55,9 @@ const [copyPath, sourcePath] = argv._;
 
 const sourceContent = new Map(await listFilesRecursively(String(sourcePath)));
 const copyContent = new Map(await listFilesRecursively(String(copyPath)));
+
+const sourceContentHashToPath = new Map([...sourceContent.values()].map((entry) => [entry.hash, entry.path]));
+
 const logDetails = [
   `with source: ${sourcePath}`,
   `with copy: ${copyPath}`,
@@ -69,10 +72,17 @@ const logDetails = [
 log(`Check if some entries of "copy" are missing in "source"`, logDetails, 'info');
 
 let numMissing = 0;
-for (const [checksum, { filePath }] of copyContent) {
+for (const [checksum, { path, hash }] of copyContent) {
   if (!sourceContent.has(checksum)) {
     ++numMissing;
-    log(`No such ${JSON.stringify(filePath)} in source`, [], 'warn');
+    const existsInSourceWithAnotherName = sourceContentHashToPath.get(hash);
+    log(
+      `No such ${JSON.stringify(path)} in source`,
+      existsInSourceWithAnotherName !== undefined
+        ? [`identical file found in source at: ${existsInSourceWithAnotherName}`]
+        : [],
+      'warn',
+    );
   }
 }
 if (numMissing !== 0) {
@@ -84,8 +94,12 @@ if (numMissing !== 0) {
 // Helpers
 
 /**
+ * @typedef {import('./internals/scan.mjs').FileDescription} FileDescription
+ */
+
+/**
  * @param {string} dir
- * @returns {Promise<[string, {file:string,filePath:string}][]>}
+ * @returns {Promise<[string, FileDescription][]>}
  */
 async function listFilesRecursively(dir) {
   const options = { withHash: checksumIncludesHash, isIncremental, continueOnFailure };
@@ -97,6 +111,6 @@ async function listFilesRecursively(dir) {
       checksumIncludesChange ? `change:${entry.lastChangedMs}` : '',
       checksumIncludesModify ? `modify:${entry.lastModifiedMs}` : '',
     ].join(':'),
-    { file: entry.name, filePath: entry.path },
+    entry,
   ]);
 }
