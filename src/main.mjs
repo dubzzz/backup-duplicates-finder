@@ -50,7 +50,7 @@ const checksumIncludesName = argv['name'] !== false;
 const checksumIncludesChange = argv['date'] !== false && argv['change'] !== false;
 const checksumIncludesModify = argv['date'] !== false && argv['modify'] !== false;
 const isIncremental = !!argv['incremental'];
-const continueOnFailure = argv['fail'] !== false;
+const continueOnFailure = !(argv['fail'] !== false);
 const [copyPath, sourcePath] = argv._;
 
 const sourceContent = new Map(await listFilesRecursively(String(sourcePath)));

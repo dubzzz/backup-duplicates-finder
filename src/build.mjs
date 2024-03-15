@@ -32,7 +32,7 @@ const argv = await yargs(hideBin(process.argv))
 
 const dig = argv['dig'] ?? 0;
 const isIncremental = !!argv['incremental'];
-const continueOnFailure = argv['fail'] !== false;
+const continueOnFailure = !(argv['fail'] !== false);
 const paths = argv._;
 
 const options = { isIncremental, continueOnFailure, withHash: true };
